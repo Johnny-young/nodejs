@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>edit</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .wrapper {
+      padding: 50px;
+      width: 50%;
+      height: 80%;
+    }
+    .item {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <form name="edit">
+      <h2>编辑内容</h2>
+      <div class="item">
+        <label for="title">标题</label>
+        <input id="title" type="text" name="title" placeholder="输入标题">
+      </div>
+      <div class="item">
+        <label for="content">内容</label>
+        <textarea id="content" rows="10" cols="30" name="content" placeholder="输入内容"></textarea>
+      </div>
+      <div class="item">
+        <label for="author">作者</label>
+        <input id="author" type="text" name="author" placeholder="请输入作者">
+      </div>
+      <input class="id" name='id' type="hidden">
+    </form>
+    <button onclick="submit()">提交</button>
+  </div>
+  <script src="./utils/ajax.js"></script>
+  <script>
+    const submit = () => {
+      console.log('submit')
+      const form = document.forms['edit']
+      const data = {
+        title: form['title'].value,
+        content: form['content'].value,
+        author: form['author'].value
+      }
+      let isUpdate = form['id'].value ? true : false
+      isUpdate && (data.id = form['id'].value)
+      console.log('isUpdate: ', isUpdate)
+      console.log('data: ', data)
+      fetch(isUpdate ? 'PUT' : 'POST', isUpdate ? '/api/blog/update' : '/api/blog/add', data)
+        .then(res => {
+          console.log('res: ', res)
+          if (res && res.status === 200) {
+            window.location.href = 'list.html'
+          }
+        })
+        .catch(err => {
+          console.log("err: ", err)
+        })
+    }
+
+    function getContent() {
+      let id = location.search.split('=')[1]
+      if (!id) {
+        return
+      }
+      fetch('GET', '/api/blog/detail', {id})
+        .then(res => {
+          console.log(res)
+          if(res && res.status === 200) {
+            insertIntoDOM(res.data[0])
+          }
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+
+    function insertIntoDOM(data) {
+      const form = document.forms['edit']
+      form['title'].value = data.title
+      form['content'].value = data.content
+      form['author'].value = data.author
+      form['id'].value = data.id
+    }
+
+    window.onload = () => {
+      getContent()
+    }
+  </script>
+</body>
+</html>

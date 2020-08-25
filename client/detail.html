@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>detail</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    .wrapper {
+      padding: 20px 50px;
+    }
+    .content {
+      margin: 12px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h2>文章详情</h2>
+    <h3 class="title"></h3>
+    <p class="content"></p>
+    <div class="author"></div>
+  </div>
+  <script src="./utils/ajax.js"></script>
+  <script>
+    // 获取文章内容
+    function getContent() {
+      let id = location.search.split('=')[1]
+      fetch('GET', '/api/blog/detail', {id})
+        .then(res => {
+          console.log(res)
+          if(res && res.status === 200) {
+            insertIntoDOM(res.data[0])
+          }
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+
+    // 内容挂在到dom上
+    function insertIntoDOM(data) {
+      document.querySelector('.title').innerText = "标题:" + data.title
+      document.querySelector('.content').innerText = '内容: ' + data.content
+      document.querySelector('.author').innerText = '作者: ' + data.author
+    }
+
+    window.onload = () => {
+      getContent()
+    }
+  </script>
+</body>
+</html>

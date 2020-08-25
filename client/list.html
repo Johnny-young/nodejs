@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>list</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .wrapper {
+      margin: 20px 50px;
+    }
+
+    .search-form {
+      display: inline-block;
+    }
+
+    .search {
+      margin: 10px 0;
+      padding: 0 10px;
+    }
+
+    .list-item {
+      display: flex;
+      margin-bottom: 15px;
+      width: 80%;
+      justify-content: space-between;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .rank {
+      width: 20px;
+    }
+
+    .content {
+      width: 80%;
+    }
+
+    .author, .create-time {
+      margin-right: 12px;
+      line-height: 24px;
+      font-size: 12px;
+      color: #aaa;
+    }
+
+    .opts button {
+      margin-left: 10px;
+    }
+
+    .page {
+      margin: 15px 0;
+      width: 80%;
+      text-align: right;
+    }
+
+    .page-nums {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .page-num-item {
+      display: inline-block;
+      margin-right: 10px;
+      width: 28px;
+      height: 25px;
+      line-height: 25px;
+      color: #333;
+      background-color: rgba(0,0,0,.1);
+      border-radius: 2px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .page-num-item:hover {
+      background-color: rgba(0,0,0,.2);
+    }
+
+    .current-page {
+      background-color: rgba(0,0,0,.4);
+    }
+
+    .current-page:hover {
+      background-color: rgba(0,0,0,.45);
+    }
+
+    #pageSize {
+      /* width: 30px; */
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h2>博客列表</h2>
+    <div class="search">
+      <form class="search-form" name="search">
+        <label for="author">作者</label>
+        <input id="author" name="author" type="text" placeholder="请输入作者名称" />
+        <label for="title">标题</label>
+        <input id="title" name="title" type="text" placeholder="请输入标题">
+      </form>
+      <button class="search-btn" title="搜索" onclick="getBlogList()">搜索</button>
+    </div>
+    <ul class="list"></ul>
+    <div class="page">
+      <div class="page-nums">
+        <span class="page-num-item current-page">1</span>
+      </div>
+      <select name="pageSize" id="pageSize" class="page-size" onchange="getBlogList({page: 1})">
+        <option value="10" selected="selected">10</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+      </select>
+    </div>
+  </div>
+  <script src="./utils/ajax.js"></script>
+  <script>
+    // 获取查询参数
+    function getParams(paramsObj={}) {
+      const searchForm = document.forms['search']
+      const currPage = document.querySelector('.current-page')
+      let params = {
+        author: searchForm['author'].value,
+        title: searchForm['title'].value,
+        page: currPage ? currPage.innerText : 1,
+        pageSize: document.querySelector('#pageSize').value,
+        ...paramsObj
+      }
+      return params
+    }
+
+    // 获取list
+    function getBlogList(params) {
+      // 更新前，清除监听器
+      window.removeEventListener('click', handleListen)
+      fetch('GET', '/api/blog/list', getParams(params))
+        .then(res => {
+          console.log(res)
+          if(res) {
+            setBlogList(res.data.list)
+            let pageContent = ''
+            for(i=1; i<= res.data.total; i++) {
+              pageContent += `<span class="page-num-item ${i === res.data.page ? 'current-page' : ''}">${i}</span>`
+            }
+            document.querySelector('.page-nums').innerHTML = pageContent
+          }
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+
+    // 设置listDOM
+    function setBlogList(data) {
+      if (!data || !data.length) {
+        return ''
+      }
+
+      let content = ''
+      data.forEach((item, index) => {
+        let itemContent = `
+          <li class="list-item">
+            <span class="rank">${index + 1}</span>
+            <div class="content">
+              <h3>
+                <a href="/detail.html?id=${item.id}" title=${item.title}>${item.title}</a>  
+              </h3>
+              <div>
+                <span class="author">作者: ${item.author}</span>  
+                <span class="create-time">时间: ${new Date(item.createtime).toLocaleString()}</span>  
+              </div>
+            </div>
+            <div class="opts">
+              <button class="button check" data-id='${item.id}'>查看</button>
+              <button class="button edit" data-id='${item.id}'>编辑</button>
+              <button class="button delete" data-id='${item.id}'>删除</button>
+            </div>
+          </li>
+        `
+        content += itemContent
+      })
+      document.querySelector('.list').innerHTML = content
+      listenButton()
+    }
+
+    // 删除文章
+    const deleteArticle = (id) => {
+      fetch('DELETE', '/api/blog/delete', { id })
+        .then(res => {
+          console.log(res)
+          if(res && res.status === 200) {
+            getBlogList()
+          }
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    }
+
+    // 监听事件
+    function listenButton() {
+      window.addEventListener('click', handleListen)
+    }
+
+    function handleListen(e) {
+      let target = e.target
+        if(target.classList.contains('check')) {
+          window.location.href = 'detail.html?id=' + target.dataset.id
+        }
+        if (target.classList.contains('edit')) {
+          window.location.href = 'edit.html?id=' + target.dataset.id
+        }
+        if (target.classList.contains('delete')) {
+          deleteArticle(target.dataset.id)
+        }
+
+        // 切换页码
+        if (target.classList.contains('page-num-item')) {
+          if (target.classList.contains('current-page')) {
+            return
+          }
+          document.querySelector('.current-page').classList.remove('current-page')
+          target.classList.add('current-page')
+          getBlogList()
+        }
+    }
+
+    window.onload = () => {
+      getBlogList()
+    }
+
+  </script>
+</body>
+</html>
