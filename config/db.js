@@ -1,7 +1,7 @@
 const MYSQL_CONFIG = {
   host: 'localhost',
   user: 'root',
-  password: 'tuya19910722',
+  password: '你的密码',
   database: 'blog',
   connectTimeout: 30000
 } 
